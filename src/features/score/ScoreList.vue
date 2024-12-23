@@ -37,6 +37,7 @@ import { storeToRefs } from 'pinia'
 import ScoreListItem from './ScoreListItem.vue'
 
 import { useUserStore } from '@/stores/user'
+import { useSearchStore } from '@/stores/search'
 
 import { getUserId } from '@/utils/userHelper'
 import { getScoreList } from '@/services/apiScore'
@@ -50,19 +51,45 @@ const students = ref([])
 const userStore = useUserStore()
 const { isStudent } = storeToRefs(userStore)
 
+const searchStore = useSearchStore()
+const { scoreSearchCondition } = storeToRefs(searchStore)
+
 const filteredScoreList = computed(() => {
   const userId = getUserId()
 
-  if (isStudent.value) {
-    return scoreList.value.filter(
-      (scoreItem) => scoreItem.student_id === userId
-    )
-  }
-  return scoreList.value.filter((scoreItem) =>
-    students.value
-      .map((student) => student.student_id)
-      .includes(scoreItem.student_id)
+  let filteredList = scoreList.value.filter((scoreItem) =>
+    isStudent.value
+      ? scoreItem.student_id === userId
+      : students.value
+          .map((student) => student.student_id)
+          .includes(scoreItem.student_id)
   )
+  // Apply search conditions
+  filteredList = filteredList.filter((scoreItem) => {
+    const student = students.value.find(
+      (student) => student.student_id === scoreItem.student_id
+    )
+
+    if (!student) return false
+
+    const studentInfoJson = JSON.stringify([
+      student.name.toLowerCase(),
+      student.class,
+      scoreItem.subject,
+      scoreItem.semester,
+      scoreItem.score
+    ])
+
+    for (const condition of scoreSearchCondition.value) {
+      if (!studentInfoJson.includes(condition.toLowerCase())) {
+        return false
+      }
+    }
+
+    return true
+  })
+
+  return filteredList
 })
 
 const isLoading = ref(true)

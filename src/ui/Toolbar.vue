@@ -1,32 +1,39 @@
 <template>
   <section class="my-4 grid grid-cols-4 gap-2">
     <section class="col-span-1">
-      <div class="badge badge-info mx-1 gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          class="inline-block h-4 w-4 transform cursor-pointer stroke-current transition-transform hover:scale-150"
+      <div v-if="isStudentList">
+        <Condition
+          v-for="(condition, idx) in studentSearchCondition"
+          :key="idx"
+          :onDelete="() => onDelete(idx)"
+          >{{ condition }}</Condition
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          ></path>
-        </svg>
-        info
+      </div>
+      <div v-if="!isStudentList">
+        <Condition
+          v-for="(condition, idx) in scoreSearchCondition"
+          :key="idx"
+          :onDelete="() => onDelete(idx)"
+          >{{ condition }}</Condition
+        >
       </div>
     </section>
 
+    <!-- search bar -->
     <div class="col-span-2">
       <label class="input input-bordered mx-auto flex w-1/2 items-center gap-2">
-        <input type="text" class="grow" placeholder="Search" />
+        <input
+          type="text"
+          class="grow"
+          placeholder="Search"
+          v-model="searchString"
+        />
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 16 16"
           fill="currentColor"
-          class="h-4 w-4 opacity-70"
+          class="h-4 w-4 cursor-pointer opacity-70"
+          @click="onSearch"
         >
           <path
             fill-rule="evenodd"
@@ -46,15 +53,28 @@
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
+
+import { useUserStore } from '@/stores/user'
+import { useSearchStore } from '@/stores/search'
+
+import Condition from './Condition.vue'
+
+import { useToast } from 'vue-toastification'
 
 const route = useRoute()
 const router = useRouter()
 
+const toast = useToast()
+
 const userStore = useUserStore()
 const { isStudent } = storeToRefs(userStore)
+const { scoreSearchCondition, studentSearchCondition } =
+  storeToRefs(useSearchStore())
+
+const isStudentList = computed(() => route.name === 'student')
 
 function onClick() {
   if (route.name === 'score') {
@@ -63,5 +83,35 @@ function onClick() {
   }
 
   router.push({ name: 'student-create' })
+}
+
+const searchString = ref('')
+const onSearch = () => {
+  if (!searchString.value.length) {
+    toast.warning('Please enter a search query')
+    return
+  }
+
+  if (isStudentList.value) {
+    studentSearchCondition.value = [
+      ...studentSearchCondition.value,
+      searchString.value.toLowerCase()
+    ]
+  } else {
+    scoreSearchCondition.value = [
+      ...scoreSearchCondition.value,
+      searchString.value.toLowerCase()
+    ]
+  }
+
+  searchString.value = ''
+}
+
+const onDelete = (idx) => {
+  if (isStudentList.value) {
+    studentSearchCondition.value.splice(idx, 1)
+  } else {
+    scoreSearchCondition.value.splice(idx, 1)
+  }
 }
 </script>

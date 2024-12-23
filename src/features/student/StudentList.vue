@@ -20,7 +20,7 @@
       </thead>
       <tbody>
         <StudentListItem
-          v-for="student in studentList"
+          v-for="student in filteredStudentList"
           :key="student.id"
           :student
         />
@@ -30,12 +30,38 @@
 </template>
 
 <script setup>
-import StudentListItem from './StudentListItem.vue'
+import { onMounted, ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+
 import { getStudentList } from '@/services/apiStudent'
-import { onMounted, ref } from 'vue'
 import { getConfig } from '@/utils/configHelper'
+
+import StudentListItem from './StudentListItem.vue'
 import Loading from '@/ui/Loading.vue'
+
+import { useSearchStore } from '@/stores/search'
+
+const { studentSearchCondition } = storeToRefs(useSearchStore())
 const studentList = ref([])
+
+const filteredStudentList = computed(() => {
+  return studentList.value.filter((student) => {
+    const studentInfoJson = JSON.stringify([
+      student.name.toLowerCase(),
+      student.gender,
+      student.class,
+      student.grade
+    ])
+
+    for (const condition of studentSearchCondition.value) {
+      if (!studentInfoJson.includes(condition)) {
+        return false
+      }
+    }
+
+    return true
+  })
+})
 
 const isLoading = ref(true)
 

@@ -66,6 +66,7 @@
 
     <!-- avatar -->
     <div class="navbar-end">
+      <ToggleTheme />
       <div class="dropdown dropdown-end">
         <div
           tabIndex="{0}"
@@ -100,6 +101,8 @@ import { storeToRefs } from 'pinia'
 
 import { getConfig } from '@/utils/configHelper'
 import { signout } from '@/services/apiAuth'
+
+import ToggleTheme from './ToggleTheme.vue'
 
 const route = useRoute()
 const router = useRouter()

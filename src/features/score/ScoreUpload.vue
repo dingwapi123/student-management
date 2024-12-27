@@ -1,7 +1,9 @@
 <template>
   <Loading v-show="isLoading" />
 
-  <div
+  <Form
+    @submit="onSubmit"
+    :validation-schema="validationSchema"
     class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300"
     v-show="!isLoading"
   >
@@ -42,7 +44,15 @@
 
       <label class="input input-bordered my-4 flex items-center gap-2">
         Score
-        <input type="number" class="grow" v-model="score" min="0" max="100" />
+        <Field
+          name="score"
+          type="number"
+          class="grow"
+          v-model="score"
+          min="0"
+          max="100"
+        />
+        <ErrorMessage name="score" class="text-sm text-red-500" />
       </label>
 
       <select class="select select-bordered mb-4 w-full" v-model="subject">
@@ -75,7 +85,7 @@
         Update Score
       </button>
     </div>
-  </div>
+  </Form>
 </template>
 
 <script setup>
@@ -88,6 +98,13 @@ import { createScore } from '@/services/apiScore'
 
 import Loading from '@/ui/Loading.vue'
 import { useToast } from 'vue-toastification'
+
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+
+const validationSchema = yup.object({
+  score: yup.string().required('Grade is required')
+})
 
 const currentStudent = ref({
   name: 'Alex',
@@ -111,7 +128,7 @@ const yearList = Array.from(
 
 const router = useRouter()
 const toast = useToast()
-const onClick = async () => {
+const onSubmit = async () => {
   toast.info('Updating score...')
 
   const newScore = {

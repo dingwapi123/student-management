@@ -3,7 +3,9 @@
   <Loading v-show="isLoading" />
 
   <!-- Content -->
-  <div
+  <Form
+    @submit="onSubmit"
+    :validation-schema="validationSchema"
     class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300"
     v-show="!isLoading"
   >
@@ -26,12 +28,14 @@
     <div class="mx-auto w-3/4">
       <label class="input input-bordered my-4 flex items-center gap-2">
         Name
-        <input
+        <Field
+          name="name"
           type="text"
           class="grow"
           value="Class 1 | Year 8"
           v-model="name"
         />
+        <ErrorMessage name="name" class="text-sm text-red-500" />
       </label>
 
       <select class="select select-bordered mb-4 w-full" v-model="gender">
@@ -46,7 +50,7 @@
         Update Profile
       </button>
     </div>
-  </div>
+  </Form>
 </template>
 
 <script setup>
@@ -60,6 +64,13 @@ import { getConfig } from '@/utils/configHelper'
 
 import Loading from '@/ui/Loading.vue'
 import { useToast } from 'vue-toastification'
+
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+
+const validationSchema = yup.object({
+  name: yup.string().required('Name is required')
+})
 
 const isLoading = ref(true)
 
@@ -83,7 +94,7 @@ function handleAvatarChange(event) {
 }
 
 const toast = useToast()
-async function onClick() {
+async function onSubmit() {
   toast.info('Updating student profile...')
 
   const newStudent = {

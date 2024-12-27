@@ -1,19 +1,23 @@
 <template>
   <Loading v-show="isLoading" />
 
-  <div
+  <Form
+    :validation-schema="validationSchema"
+    @submit="onSubmit"
     class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300"
     v-show="!isLoading"
   >
     <div class="mx-auto w-3/4 pt-4">
       <label class="input input-bordered my-4 flex items-center gap-2">
         Email
-        <input type="text" class="grow" v-model="email" />
+        <Field name="email" type="text" class="grow" v-model="email" />
+        <ErrorMessage name="email" class="text-sm text-red-500" />
       </label>
 
       <label class="input input-bordered my-4 flex items-center gap-2">
         Name
-        <input type="text" class="grow" v-model="name" />
+        <Field name="name" type="text" class="grow" v-model="name" />
+        <ErrorMessage name="name" class="text-sm text-red-500" />
       </label>
 
       <select class="select select-bordered mb-4 w-full" v-model="classInfo">
@@ -40,7 +44,7 @@
         Create Student
       </button>
     </div>
-  </div>
+  </Form>
 </template>
 
 <script setup>
@@ -55,6 +59,14 @@ import { signup } from '@/services/apiAuth'
 
 import Loading from '@/ui/Loading.vue'
 import { useToast } from 'vue-toastification'
+
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+
+const validationSchema = yup.object({
+  email: yup.string().required().email(),
+  name: yup.string().required()
+})
 
 const router = useRouter()
 
@@ -71,7 +83,7 @@ const teacherId = ref('')
 const isLoading = ref(true)
 
 const toast = useToast()
-const onClick = async () => {
+const onSubmit = async () => {
   toast.info('Creating Student...')
   const userData = await signup(email.value, '123456', {
     isStudent: true

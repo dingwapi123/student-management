@@ -1,5 +1,9 @@
 <template>
-  <div class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300">
+  <Form
+    class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300"
+    @submit="onSubmit"
+    :validation-schema="validationSchema"
+  >
     <h1 class="text-center text-4xl">Sunshine</h1>
 
     <div class="mx-auto w-3/4">
@@ -17,7 +21,14 @@
             d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z"
           />
         </svg>
-        <input type="text" class="grow" placeholder="Email" v-model="email" />
+        <Field
+          name="email"
+          type="text"
+          class="grow"
+          placeholder="Email"
+          v-model="email"
+        />
+        <ErrorMessage name="email" class="text-sm text-red-500" />
       </label>
 
       <label class="input input-bordered my-4 flex items-center gap-2">
@@ -33,12 +44,14 @@
             clip-rule="evenodd"
           />
         </svg>
-        <input
+        <Field
+          name="password"
           type="password"
           class="grow"
           placeholder="Password"
           v-model="password"
         />
+        <ErrorMessage name="password" class="text-sm text-red-500" />
       </label>
 
       <label class="input input-bordered my-4 flex items-center gap-2">
@@ -54,20 +67,20 @@
             clip-rule="evenodd"
           />
         </svg>
-        <input
+        <Field
+          name="confirmPassword"
           type="password"
           class="grow"
           placeholder="Confirm Password"
           v-model="confirmPassword"
         />
+        <ErrorMessage name="confirmPassword" class="text-sm text-red-500" />
       </label>
     </div>
 
     <div class="text-center">
       <!-- TODO: add form validation -->
-      <button class="btn btn-secondary mx-2 my-2" @click="onClick">
-        Signup
-      </button>
+      <button class="btn btn-secondary mx-2 my-2">Signup</button>
       <button
         class="btn btn-primary mx-2 my-2"
         @click="router.push({ name: 'login' })"
@@ -75,7 +88,7 @@
         Login
       </button>
     </div>
-  </div>
+  </Form>
 </template>
 
 <script setup>
@@ -85,13 +98,25 @@ import { useRouter } from 'vue-router'
 import { signup } from '@/services/apiAuth'
 import { createTeacher } from '@/services/apiTeacher'
 
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+
+const validationSchema = yup.object({
+  email: yup.string().required().email(),
+  password: yup.string().required().min(6),
+  confirmPassword: yup
+    .string()
+    .required()
+    .oneOf([yup.ref('password')], 'Passwords must match')
+})
+
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
 const router = useRouter()
 
-async function onClick() {
+async function onSubmit() {
   const data = await signup(email.value, password.value)
   console.log(data)
 

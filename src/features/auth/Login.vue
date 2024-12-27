@@ -1,5 +1,9 @@
 <template>
-  <div class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300">
+  <Form
+    class="mx-auto mt-40 w-1/3 rounded-box shadow-2xl shadow-blue-300"
+    @submit="onSubmit"
+    :validation-schema="validationSchema"
+  >
     <h1 class="text-center text-4xl">Sunshine</h1>
 
     <div class="mx-auto w-3/4">
@@ -17,7 +21,14 @@
             d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z"
           />
         </svg>
-        <input type="text" class="grow" placeholder="Email" v-model="email" />
+        <Field
+          name="email"
+          type="text"
+          class="grow"
+          placeholder="Email"
+          v-model="email"
+        />
+        <ErrorMessage name="email" class="text-sm text-red-500" />
       </label>
 
       <label class="input input-bordered my-4 flex items-center gap-2">
@@ -33,12 +44,14 @@
             clip-rule="evenodd"
           />
         </svg>
-        <input
+        <Field
+          name="password"
           type="password"
           class="grow"
           placeholder="Password"
           v-model="password"
         />
+        <ErrorMessage name="password" class="text-sm text-red-500" />
       </label>
 
       <div class="grid grid-cols-2 gap-1">
@@ -55,7 +68,7 @@
     </div>
 
     <div class="text-center">
-      <button class="btn btn-primary mx-2 my-2" @click="onClick">Login</button>
+      <button class="btn btn-primary mx-2 my-2">Login</button>
       <button
         class="btn btn-secondary mx-2 my-2"
         @click="router.push({ name: 'signup' })"
@@ -63,12 +76,15 @@
         Signup
       </button>
     </div>
-  </div>
+  </Form>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { login } from '@/services/apiAuth'
+
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
 
 import { useRouter } from 'vue-router'
 
@@ -77,7 +93,11 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 
-async function onClick() {
+const validationSchema = yup.object({
+  email: yup.string().required().email(),
+  password: yup.string().required().min(6)
+})
+async function onSubmit() {
   const data = await login(email.value, password.value)
 
   if (data) {

@@ -14,6 +14,39 @@ export async function getStudentList(teacherId) {
   return student
 }
 
+export async function countStudent(teacherId) {
+  const { count, error } = await supabase
+    .from('student')
+    .select('*', { count: 'exact', head: true })
+    .eq('teacher_id', teacherId)
+
+  if (error) {
+    console.log(error.message)
+    return
+  }
+
+  return count
+}
+
+export async function getStudentListWithLimit(
+  teacherId,
+  currentPage,
+  pageSize
+) {
+  const { data: student, error } = await supabase
+    .from('student')
+    .select('*')
+    .eq('teacher_id', teacherId)
+    .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
+
+  if (error) {
+    console.log(error.message)
+    return
+  }
+
+  return student
+}
+
 export async function createStudent(newStudent) {
   const { data, error } = await supabase
     .from('student')
@@ -29,7 +62,7 @@ export async function createStudent(newStudent) {
 }
 
 export async function getStudentByStudentId(studentId) {
-  const { data: student, error } = await supabase
+  const { data: students, error } = await supabase
     .from('student')
     .select('*')
     .eq('student_id', studentId)
@@ -39,7 +72,7 @@ export async function getStudentByStudentId(studentId) {
     return
   }
 
-  return student[0]
+  return students[0]
 }
 
 export async function updateStudent(studentId, newStudent) {

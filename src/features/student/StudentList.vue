@@ -1,5 +1,4 @@
 <template>
-  <!-- Loading -->
   <Loading v-show="isLoading" />
 
   <!-- Content -->
@@ -27,26 +26,33 @@
       </tbody>
     </table>
   </div>
+
+  <Pageination :currentPage :pageCount></Pageination>
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
-import { getStudentList } from '@/services/apiStudent'
+import { useSearchStore } from '@/stores/search'
+import {
+  getStudentListWithLimit,
+  countStudent as countStudentApi
+} from '@/services/apiStudent'
 import { getConfig } from '@/utils/configHelper'
+import { getUserId } from '@/utils/userHelper'
 
 import StudentListItem from './StudentListItem.vue'
 import Loading from '@/ui/Loading.vue'
-
-import { useSearchStore } from '@/stores/search'
+import Pageination from '@/ui/Pageination.vue'
 
 const { studentSearchCondition } = storeToRefs(useSearchStore())
 const studentList = ref([])
 
 const filteredStudentList = computed(() => {
   return studentList.value.filter((student) => {
-    const studentInfoJson = JSON.stringify([
+    const studentInfoJSON = JSON.stringify([
       student.name.toLowerCase(),
       student.gender,
       student.class,
@@ -54,7 +60,7 @@ const filteredStudentList = computed(() => {
     ])
 
     for (const condition of studentSearchCondition.value) {
-      if (!studentInfoJson.includes(condition)) {
+      if (!studentInfoJSON.includes(condition)) {
         return false
       }
     }
@@ -65,14 +71,56 @@ const filteredStudentList = computed(() => {
 
 const isLoading = ref(true)
 
-onMounted(async () => {
+async function fetchData() {
   isLoading.value = true
+
   const token = getConfig('SUPABASE_TOKEN')
   const userToken = JSON.parse(localStorage.getItem(token))
 
   const teacherId = userToken.user.id
 
-  studentList.value = await getStudentList(teacherId)
+  studentList.value = await getStudentListWithLimit(
+    teacherId,
+    currentPage.value,
+    pageSize
+  )
+
   isLoading.value = false
+}
+
+const router = useRouter()
+const route = useRoute()
+
+const currentPage = ref(route.query.page || 1)
+const pageSize = getConfig('PAGE_SIZE')
+const countStudent = ref(0)
+
+const pageCount = computed(() => {
+  return Math.ceil(countStudent.value / pageSize)
+})
+
+watch(
+  () => currentPage.value,
+  () => {
+    fetchData()
+    router.push({ query: { page: currentPage.value } })
+  }
+)
+
+watch(
+  () => route.query.page,
+  (page) => {
+    currentPage.value = page
+  }
+)
+
+onMounted(async () => {
+  const userId = getUserId()
+
+  router.push({ query: { page: currentPage.value } })
+  fetchData()
+
+  const countStudentData = await countStudentApi(userId)
+  countStudent.value = countStudentData
 })
 </script>

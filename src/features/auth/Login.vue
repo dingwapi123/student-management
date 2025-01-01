@@ -68,10 +68,13 @@
     </div>
 
     <div class="text-center">
-      <button class="btn btn-primary mx-2 my-2">Login</button>
+      <button class="btn btn-primary mx-2 my-2" :disabled="isLogging">
+        Login
+      </button>
       <button
         class="btn btn-secondary mx-2 my-2"
         @click="router.push({ name: 'signup' })"
+        :disabled="isLogging"
       >
         Signup
       </button>
@@ -81,14 +84,18 @@
 
 <script setup>
 import { ref } from 'vue'
-import { login } from '@/services/apiAuth'
-
-import { Form, Field, ErrorMessage } from 'vee-validate'
-import * as yup from 'yup'
-
 import { useRouter } from 'vue-router'
 
+import { login as loginApi } from '@/services/apiAuth'
+
+import { useToast } from 'vue-toastification'
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+import { useMutation } from '@tanstack/vue-query'
+
 const router = useRouter()
+
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -97,11 +104,19 @@ const validationSchema = yup.object({
   email: yup.string().required().email(),
   password: yup.string().required().min(6)
 })
-async function onSubmit() {
-  const data = await login(email.value, password.value)
 
-  if (data) {
+const { mutate: login, isPending: isLogging } = useMutation({
+  mutationFn: ({ email, password }) => loginApi(email, password),
+  onSuccess: () => {
+    toast.success('Login successful')
+
     router.push('/')
+  },
+  onError: (error) => {
+    toast.error(error.message)
   }
+})
+function onSubmit() {
+  login({ email: email.value, password: password.value })
 }
 </script>

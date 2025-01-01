@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",
+    "@tanstack/vue-query": "^5.62.9",
     "pinia": "^2.1.7",
     "vee-validate": "^4.15.0",
     "vue": "^3.4.29",

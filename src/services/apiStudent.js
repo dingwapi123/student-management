@@ -22,7 +22,7 @@ export async function countStudent(teacherId) {
 
   if (error) {
     console.log(error.message)
-    return
+    throw new Error(error.message)
   }
 
   return count

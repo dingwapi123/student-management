@@ -80,10 +80,13 @@
 
     <div class="text-center">
       <!-- TODO: add form validation -->
-      <button class="btn btn-secondary mx-2 my-2">Signup</button>
+      <button class="btn btn-secondary mx-2 my-2" :disabled="isLoading">
+        Signup
+      </button>
       <button
         class="btn btn-primary mx-2 my-2"
         @click="router.push({ name: 'login' })"
+        :disabled="isLoading"
       >
         Login
       </button>
@@ -92,14 +95,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { signup } from '@/services/apiAuth'
-import { createTeacher } from '@/services/apiTeacher'
+import { signup as signupApi } from '@/services/apiAuth'
+import { createTeacher as createTeacherApi } from '@/services/apiTeacher'
+
+import { useMutation } from '@tanstack/vue-query'
 
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
+import { useToast } from 'vue-toastification'
 
 const validationSchema = yup.object({
   email: yup.string().required().email(),
@@ -116,13 +122,31 @@ const confirmPassword = ref('')
 
 const router = useRouter()
 
-async function onSubmit() {
-  const data = await signup(email.value, password.value)
-  console.log(data)
+const toast = useToast()
 
-  const teacherId = data.user.id
-  const teacher = await createTeacher({ teacher_id: teacherId })
+const { mutate: createTeacher, isPending: isCreating } = useMutation({
+  mutationFn: createTeacherApi,
+  onSuccess: () => {
+    toast.success('Signup successfully')
+    router.push({ name: 'login' })
+  },
+  onError: (error) => {
+    toast.error(error.message)
+  }
+})
 
-  console.log(teacher)
+const { mutate: signup, isPending: isSigning } = useMutation({
+  mutationFn: ({ email, password }) => signupApi(email, password),
+  onSuccess: (userData) => {
+    createTeacher({ teacher_id: userData.user.id })
+  },
+  onError: (error) => {
+    toast.error(error.message)
+  }
+})
+
+const isLoading = computed(() => isSigning.value || isCreating.value)
+function onSubmit() {
+  signup({ email: email.value, password: password.value })
 }
 </script>

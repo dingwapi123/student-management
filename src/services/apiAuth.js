@@ -30,7 +30,7 @@ export async function login(email, password) {
 
   if (error) {
     console.log(error.message)
-    return
+    throw new Error(error.message)
   }
 
   return data

@@ -36,8 +36,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
 import { useSearchStore } from '@/stores/search'
+
 import {
-  getStudentListWithLimit,
+  getStudentListWithLimit as getStudentListWithLimitApi,
   countStudent as countStudentApi
 } from '@/services/apiStudent'
 import { getConfig } from '@/utils/configHelper'
@@ -46,6 +47,9 @@ import { getUserId } from '@/utils/userHelper'
 import StudentListItem from './StudentListItem.vue'
 import Loading from '@/ui/Loading.vue'
 import Pageination from '@/ui/Pageination.vue'
+
+import { useMutation } from '@tanstack/vue-query'
+import { useToast } from 'vue-toastification'
 
 const { studentSearchCondition } = storeToRefs(useSearchStore())
 const studentList = ref([])
@@ -69,34 +73,55 @@ const filteredStudentList = computed(() => {
   })
 })
 
-const isLoading = ref(true)
-
-async function fetchData() {
-  isLoading.value = true
-
-  const token = getConfig('SUPABASE_TOKEN')
-  const userToken = JSON.parse(localStorage.getItem(token))
-
-  const teacherId = userToken.user.id
-
-  studentList.value = await getStudentListWithLimit(
-    teacherId,
-    currentPage.value,
-    pageSize
-  )
-
-  isLoading.value = false
-}
-
 const router = useRouter()
 const route = useRoute()
 
 const currentPage = ref(route.query.page || 1)
 const pageSize = getConfig('PAGE_SIZE')
-const countStudent = ref(0)
+const studentCount = ref(0)
 
 const pageCount = computed(() => {
-  return Math.ceil(countStudent.value / pageSize)
+  return Math.ceil(studentCount.value / pageSize)
+})
+
+const toast = useToast()
+
+function fetchData() {
+  const teacherId = getUserId()
+
+  getStudentListWithLimit({
+    teacherId,
+    currentPage: currentPage.value,
+    pageSize
+  })
+
+  isLoading.value = false
+}
+
+const { mutate: getStudentListWithLimit, isPending: isStudentListLoding } =
+  useMutation({
+    mutationFn: ({ teacherId, currentPage, pageSize }) =>
+      getStudentListWithLimitApi(teacherId, currentPage, pageSize),
+    onSuccess: (studentListData) => {
+      studentList.value = studentListData
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+const { mutate: countStudent, isPending: isCounting } = useMutation({
+  mutationFn: () => countStudentApi(getUserId()),
+  onSuccess: (countStudentData) => {
+    studentCount.value = countStudentData
+  },
+  onError: (error) => {
+    toast.error(error.message)
+  }
+})
+
+const isLoading = computed(() => {
+  return isStudentListLoding.value || isCounting.value
 })
 
 watch(
@@ -115,12 +140,9 @@ watch(
 )
 
 onMounted(async () => {
-  const userId = getUserId()
-
   router.push({ query: { page: currentPage.value } })
   fetchData()
 
-  const countStudentData = await countStudentApi(userId)
-  countStudent.value = countStudentData
+  countStudent()
 })
 </script>

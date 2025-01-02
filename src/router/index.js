@@ -14,6 +14,10 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
       children: [
         {
+          path: '',
+          redirect: '/home/score'
+        },
+        {
           path: 'score',
           children: [
             {
@@ -70,6 +74,13 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: () => import('@/features/auth/Signup.vue')
+    },
+
+    // 将匹配所有内容并将其放在 `route.params.pathMatch` 下
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/ui/PageNotFound.vue')
     }
   ]
 })

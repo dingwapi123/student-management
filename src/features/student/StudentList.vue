@@ -86,8 +86,15 @@ const pageCount = computed(() => {
 
 const toast = useToast()
 
+const loading = ref(false) // 新增 loading 响应式引用
+
+const isLoading = computed(() => {
+  return loading.value || isStudentListLoding.value || isCounting.value
+})
+
 function fetchData() {
   const teacherId = getUserId()
+  loading.value = true // 使用 loading 响应式引用
 
   getStudentListWithLimit({
     teacherId,
@@ -95,7 +102,7 @@ function fetchData() {
     pageSize
   })
 
-  isLoading.value = false
+  loading.value = false // 使用 loading 响应式引用
 }
 
 const { mutate: getStudentListWithLimit, isPending: isStudentListLoding } =
@@ -118,10 +125,6 @@ const { mutate: countStudent, isPending: isCounting } = useMutation({
   onError: (error) => {
     toast.error(error.message)
   }
-})
-
-const isLoading = computed(() => {
-  return isStudentListLoding.value || isCounting.value
 })
 
 watch(
